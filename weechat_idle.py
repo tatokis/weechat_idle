@@ -5,6 +5,7 @@ from gi.repository import GLib
 from dbus.mainloop.glib import DBusGMainLoop
 import subprocess
 import argparse
+import time
 
 parser = argparse.ArgumentParser(
                     prog="weechat_idle",
@@ -35,19 +36,24 @@ if ssh_host:
     to_weechat_cmd  = ["ssh", ssh_host, to_weechat_cmd ]
     to_previous_cmd = ["ssh", ssh_host, to_previous_cmd]
 
-ml = DBusGMainLoop(set_as_default=True)
-
-bus = dbus.SessionBus()
-
-# For some reason ActiveChanged is not emitted over the freedesktop one. *sigh*
-# If you're on KDE Plasma, uncomment the freedesktop one and comment the gnome one
-#obj = bus.get_object("org.freedesktop.ScreenSaver", "/org/freedesktop/ScreenSaver")
-obj = bus.get_object("org.gnome.ScreenSaver", "/org/gnome/ScreenSaver")
-
 def active_changed(active):
     cmd = to_weechat_cmd if active else to_previous_cmd
     subprocess.run(cmd, shell=not ssh_host)
 
-obj.connect_to_signal("ActiveChanged", active_changed)
+ml = DBusGMainLoop(set_as_default=True)
 
-GLib.MainLoop().run()
+bus = dbus.SessionBus()
+
+while True:
+    try:
+        # For some reason ActiveChanged is not emitted over the freedesktop one. *sigh*
+        # If you're on KDE Plasma, uncomment the freedesktop one and comment the gnome one
+        #obj = bus.get_object("org.freedesktop.ScreenSaver", "/org/freedesktop/ScreenSaver")
+        obj = bus.get_object("org.gnome.ScreenSaver", "/org/gnome/ScreenSaver", follow_name_owner_changes=True)
+
+        obj.connect_to_signal("ActiveChanged", active_changed)
+
+        GLib.MainLoop().run()
+    except dbus.exceptions.DBusException as e:
+        print(str(e))
+        time.sleep(5)
