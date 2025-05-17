@@ -19,9 +19,11 @@ args = parser.parse_args()
 ssh_host = args.host
 pipe = args.pipe
 
+away_reason = "Computer is idle"
+
 weechat_var = "plugins.var.idle_autoswitch.last_buffer"
-to_weechat_cmd  = f"*/eval /mute /set {weechat_var} ${{buffer.full_name}}\\n*/buffer weechat"
-to_previous_cmd = f"*/eval /buffer ${{{weechat_var}}}"
+to_weechat_cmd  = f"*/eval /mute /set {weechat_var} ${{buffer.full_name}}\\n*/buffer weechat\\n*/aaway {away_reason}"
+to_previous_cmd = f"*/eval /buffer ${{{weechat_var}}}\\n*/aaway"
 
 # Wrap them in echo and pipe them
 # -e needed for newlines
